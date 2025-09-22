@@ -11,7 +11,6 @@ class Transaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'service',
         'amount',
         'type', // 'positive' ou 'negative'
@@ -24,9 +23,4 @@ class Transaction extends Model
         'date' => 'date',
     ];
 
-    // Relation avec l'utilisateur
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 }

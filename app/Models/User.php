@@ -11,6 +11,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory;
 
     protected $fillable = [
+        'id',
         'name',
         'firstname',
         'email',
@@ -34,4 +35,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(Transaction::class);
     }
+
 }
