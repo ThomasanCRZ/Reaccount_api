@@ -18,10 +18,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Transactions (CRUD)
-    // Route::apiResource('transactions', TransactionController::class);
+    Route::apiResource('transactions', TransactionController::class);
     // Ou explicitement :
-    Route::get('/transactions', [TransactionController::class, 'index']);
-    Route::post('/transactions/store', [TransactionController::class, 'store']);
+    //Route::get('/transactions', [TransactionController::class, 'index']);
+    //Route::post('/transactions/store', [TransactionController::class, 'store']);
     //Route::get('/transactions/{id}', [TransactionController::class, 'show']);
     // Route::put('/transactions/{id}', [TransactionController::class, 'update']);
     // Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);

@@ -3,20 +3,23 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\TransactionResource;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\TransactionResource;
 
 class TransactionController extends Controller
 {
-    // Récupérer toutes les transactions de l'utilisateur connecté
+    /**
+     * Récupérer les transactions de l'utilisateur connecté
+     */
     public function index(Request $request)
     {
         $user = $request->user();
 
-        $transactions = Transaction::where('user_id', $user->id)->get();
+        $transactions = Transaction::where('user_id', $user->id)
+            ->orderBy('date', 'desc')
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -24,130 +27,43 @@ class TransactionController extends Controller
         ]);
     }
 
-    // Créer une nouvelle transaction
+    /**
+     * Créer une nouvelle transaction
+     */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'service' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'type' => 'required|in:positive,negative',
-            'category' => 'required|string|max:50',
-            'date' => 'required|date',
-        ]);
+        try {
+            $request->validate([
+                'type' => 'required|in:positive,negative',
+                'amount' => 'required|numeric|min:0.01',
+                'category' => 'required|string|max:255',
+                'service' => 'required|string|max:255',
+                'date' => 'required|date',
+            ]);
 
-        if ($validator->fails()) {
+            $transaction = Transaction::create([
+                'user_id' => Auth::id(),
+                'type' => $request->type,
+                'amount' => $request->amount,
+                'category' => $request->category,
+                'service' => $request->service,
+                'date' => $request->date,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => new TransactionResource($transaction),
+                'message' => 'Transaction créée avec succès'
+            ], 201);
+
+        } catch (\Exception $e) {
+            logger('Erreur création transaction: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Validation échouée',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Erreur lors de la création de la transaction',
+                'error' => config('app.debug') ? $e->getMessage() : 'Erreur serveur'
+            ], 500);
         }
-
-        $user = $request->user();
-
-        $transaction = Transaction::create([
-            'user_id' => $user->id,
-            'service' => $request->service,
-            'amount' => $request->amount,
-            'type' => $request->type,
-            'category' => $request->category,
-            'date' => $request->date,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaction créée avec succès',
-            'data' => $transaction
-        ], 201);
-    }
-
-    // Récupérer une transaction spécifique
-    public function show($id)
-    {
-        $user = Auth::user();
-        $transaction = Transaction::where('id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$transaction) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction non trouvée'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $transaction
-        ]);
-    }
-
-    // Mettre à jour une transaction
-    public function update(Request $request, $id)
-    {
-        $user = Auth::user();
-        $transaction = Transaction::where('id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$transaction) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction non trouvée'
-            ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'service' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'type' => 'required|in:positive,negative',
-            'category' => 'required|string|max:50',
-            'date' => 'required|date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation échouée',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $transaction->update([
-            'service' => $request->service,
-            'amount' => $request->amount,
-            'type' => $request->type,
-            'category' => $request->category,
-            'date' => $request->date,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaction mise à jour avec succès',
-            'data' => $transaction
-        ]);
-    }
-
-    // Supprimer une transaction
-    public function destroy($id)
-    {
-        $user = Auth::user();
-        $transaction = Transaction::where('id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$transaction) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction non trouvée'
-            ], 404);
-        }
-
-        $transaction->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Transaction supprimée avec succès'
-        ]);
     }
 }

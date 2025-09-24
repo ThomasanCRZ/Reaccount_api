@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
 
 class Transaction extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'service',
         'amount',
         'type', // 'positive' ou 'negative'
@@ -22,5 +22,10 @@ class Transaction extends Model
         'amount' => 'decimal:2',
         'date' => 'date',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
 }
